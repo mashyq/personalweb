@@ -12,8 +12,25 @@ import { faqs, profile, services } from "../data/site";
  * here, which is what stops a stale or invented domain reaching production.
  *
  * Set VITE_GOOGLE_SITE_VERIFICATION / VITE_BING_SITE_VERIFICATION to the
- * tokens from Search Console / Webmaster Tools — never hardcoded here.
+ * tokens from Search Console / Webmaster Tools to override the defaults below.
  */
+
+/**
+ * Search Console verification token.
+ *
+ * A `google-site-verification` token is public by design: its entire purpose is
+ * to appear in the served HTML so Google can read it. It is a site-ownership
+ * check, not a credential, so committing it is safe and is what makes the tag
+ * reach production without adding environment variables on Vercel.
+ *
+ * This is NOT a secret. Never put API keys, passwords or private tokens here —
+ * only `google-site-verification` / `msvalidate.01` style public tokens.
+ */
+const GOOGLE_VERIFICATION =
+  import.meta.env.VITE_GOOGLE_SITE_VERIFICATION || "L6akMy7RZn-kdHByjLPDaGKzkgh2_3O4zGmMl2tbv0k";
+
+/** Bing Webmaster Tools token. Empty until the site is submitted there. */
+const BING_VERIFICATION = import.meta.env.VITE_BING_SITE_VERIFICATION || "";
 
 /** Absolute origin, trailing slash removed. */
 export const SITE_URL = __SITE_URL__;
@@ -261,19 +278,10 @@ export function renderHead({
     // Icons + sitemap discovery
     `<link rel="sitemap" type="application/xml" href="${absolute("/sitemap.xml")}" />`,
 
-    // Search engine verification (only rendered when configured)
-    import.meta.env.VITE_GOOGLE_SITE_VERIFICATION &&
-      meta(
-        "name",
-        "google-site-verification",
-        import.meta.env.VITE_GOOGLE_SITE_VERIFICATION,
-      ),
-    import.meta.env.VITE_BING_SITE_VERIFICATION &&
-      meta(
-        "name",
-        "msvalidate.01",
-        import.meta.env.VITE_BING_SITE_VERIFICATION,
-      ),
+    // Search engine verification (public tokens, safe to commit)
+    GOOGLE_VERIFICATION &&
+      meta("name", "google-site-verification", GOOGLE_VERIFICATION),
+    BING_VERIFICATION && meta("name", "msvalidate.01", BING_VERIFICATION),
 
     // Structured data
     `<script type="application/ld+json">${JSON.stringify(buildJsonLd({ canonical }))}</script>`,

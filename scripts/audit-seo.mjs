@@ -112,6 +112,16 @@ else pass(`html lang declared (${lang})`);
 if (!/<link\s+rel="sitemap"/.test(indexHtml)) fail("no <link rel=\"sitemap\"> discovery tag");
 else pass("<link rel=\"sitemap\"> present");
 
+// ---------------------------------------------- Search Console verification tag
+const googleVerification = indexHtml.match(
+  /<meta\s+name="google-site-verification"\s+content="([^"]+)"/,
+)?.[1];
+if (!googleVerification)
+  warn("no google-site-verification meta tag: Search Console HTML-tag verification will fail");
+else if (!/^[A-Za-z0-9_-]{10,}$/.test(googleVerification))
+  fail(`google-site-verification token looks malformed: "${googleVerification}"`);
+else pass(`google-site-verification tag present (${googleVerification.length} chars)`);
+
 // --------------------------------------------------- https / origin consistency
 const insecureAbsolutes = [
   ...new Set(
