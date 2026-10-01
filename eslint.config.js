@@ -10,7 +10,13 @@ export default [
     files: ["**/*.{js,jsx}"],
     languageOptions: {
       ecmaVersion: 2022,
-      globals: { ...globals.browser },
+      globals: {
+        ...globals.browser,
+        // Injected as build-time constants by vite.config.js.
+        __SITE_URL__: "readonly",
+        __SITE_URL_SOURCE__: "readonly",
+        __SITE_URL_IS_PRODUCTION__: "readonly",
+      },
       parserOptions: {
         ecmaVersion: "latest",
         ecmaFeatures: { jsx: true },

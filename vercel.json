@@ -6,7 +6,6 @@
   "installCommand": "npm install",
   "cleanUrls": true,
   "trailingSlash": false,
-  "//": "No catch-all rewrite: the site is a single page navigated with hash anchors, so client-side routing is unnecessary. Unknown paths now correctly return a 404 served from dist/404.html instead of a soft-200.",
   "headers": [
     {
       "source": "/assets/(.*)",

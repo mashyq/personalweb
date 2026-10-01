@@ -20,8 +20,11 @@ import { renderToString } from "react-dom/server";
 import App from "../src/App.jsx";
 import NotFound from "../src/pages/NotFound.jsx";
 import {
+  INDEXABLE_URLS,
   SITE,
   SITE_URL,
+  SITE_URL_IS_PRODUCTION,
+  SITE_URL_SOURCE,
   absolute,
   renderHead,
   renderRobots,
@@ -45,9 +48,11 @@ function today() {
 
 const warnings = [];
 
-if (!process.env.VITE_SITE_URL) {
+if (!SITE_URL_IS_PRODUCTION) {
   warnings.push(
-    `VITE_SITE_URL is not set — canonical, sitemap and robots.txt fall back to "${SITE_URL}".`,
+    `Site origin is the local sentinel "${SITE_URL}". This build is fine for ` +
+      "local testing but must never be deployed: on Vercel the real domain is " +
+      "detected automatically via VERCEL_PROJECT_PRODUCTION_URL.",
   );
 }
 
@@ -87,11 +92,12 @@ writeFileSync(
 
 // ---------------------------------------------------------------------- report
 console.log("\n  Prerendered:");
-console.log(`    canonical   ${SITE_URL}`);
+console.log(`    canonical   ${SITE_URL}  (source: ${SITE_URL_SOURCE})`);
 console.log(`    index.html  ${(appHtml.length / 1024).toFixed(1)} kB of markup`);
-console.log(`    404.html    ${(notFoundHtml.length / 1024).toFixed(1)} kB (noindex)`);
+console.log(`    404.html    ${(notFoundHtml.length / 1024).toFixed(1)} kB (noindex, excluded from sitemap)`);
 console.log(`    robots.txt  ${absolute("/robots.txt")}`);
 console.log(`    sitemap.xml ${absolute("/sitemap.xml")}`);
+console.log(`    indexable   ${INDEXABLE_URLS.length} page(s)`);
 
 warnings.forEach((warning) => console.warn(`\n  warning: ${warning}`));
 console.log("");

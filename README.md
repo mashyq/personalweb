@@ -65,20 +65,41 @@ any `.jsx` file for routine content changes.
 
 ## Environment variables
 
-Copy `.env.example` to `.env` and fill in. **Set `VITE_SITE_URL` before
-deploying** — it drives canonical URLs, Open Graph, JSON-LD, `robots.txt` and
-`sitemap.xml`.
+Copy `.env.example` to `.env`. On Vercel **you do not need to configure
+anything** — the production domain is detected automatically at build time.
+
+### How the site URL is resolved
+
+`scripts/resolve-site-url.mjs` runs inside `vite.config.js` and resolves the
+canonical origin once per build, injecting it as a compile-time constant so the
+prerendered HTML and the running app can never disagree. First match wins:
+
+| Order | Source                                          | When to use                        |
+| ----- | ----------------------------------------------- | ---------------------------------- |
+| 1     | `VITE_SITE_URL`                                 | Override, e.g. a custom domain     |
+| 2     | `VERCEL_PROJECT_PRODUCTION_URL` (Vercel builtin) | Normal production deploys          |
+| 3     | `VERCEL_URL`                                    | Preview/branch builds              |
+| 4     | `http://localhost:5173`                         | Local builds only, never deployed  |
+
+Safety rules — the build **fails loudly** rather than shipping a wrong domain:
+
+- An unresolvable origin on a Vercel build is a hard error
+- Placeholder hosts (`your-domain.com`, `example.com`, …) are rejected
+- `http://` is rejected for any non-local host
+
+Production origin: `https://frankmachariatech.vercel.app`
 
 | Variable                            | Required | Purpose                                            |
 | ----------------------------------- | -------- | -------------------------------------------------- |
-| `VITE_SITE_URL`                     | **Yes**  | Production origin, no trailing slash              |
+| `VITE_SITE_URL`                     | No       | Overrides auto-detection; production origin        |
 | `VITE_OG_IMAGE`                     | No       | Path to a 1200×630 PNG if you replace the SVG card |
 | `VITE_GOOGLE_SITE_VERIFICATION`     | No       | Search Console HTML-tag token                      |
 | `VITE_BING_SITE_VERIFICATION`       | No       | Bing Webmaster Tools token (`msvalidate.01`)       |
 | `VITE_CONTACT_ENDPOINT`             | No       | Form POST endpoint for the contact form            |
 
-No secrets belong in these variables — they are all inlined into the public
-client bundle.
+No secrets belong in these variables — every `VITE_*` value is inlined into the
+public client bundle and is readable by anyone. `.env` and `.env.*` are
+gitignored; only `.env.example` is committed.
 
 ### Contact form
 
@@ -127,12 +148,28 @@ Twitter/X card, and a JSON-LD `@graph` containing:
 
 ### Validation
 
-`scripts/audit-seo.mjs` runs at the end of every build and **fails the build**
-on: missing/over-long title or description, non-HTTPS canonical, `noindex` on the
-index page, missing OG/Twitter tags, zero or multiple `<h1>`, heading level
-jumps, duplicate `id` attributes, internal links pointing at missing ids,
-malformed JSON-LD, `<img>` without `alt`, invalid `robots.txt`, insecure or
-duplicated sitemap URLs, a non-`noindex` 404, and unreplaced build markers.
+`scripts/audit-seo.mjs` runs at the end of every build and **fails the build** on:
+
+- missing or over-long title / meta description, or titles and descriptions
+  duplicated between documents
+- non-HTTPS canonical, insecure absolute URLs, or `og:url` disagreeing with the
+  canonical
+- `noindex` on the index page, or a missing `noindex` on the 404
+- missing Open Graph / Twitter / viewport / `lang` / `<link rel="sitemap">` tags
+- zero or multiple `<h1>`, heading level jumps, duplicate `id` attributes
+- internal links pointing at missing ids, and key sections with no internal link
+- malformed JSON-LD, or a missing `ProfessionalService` / `FAQPage` / `WebSite` node
+- `<img>` without `alt`
+- invalid `robots.txt`, or a `Sitemap:` line that disagrees with the canonical
+- sitemap URLs on a different host than the canonical, non-HTTPS sitemap URLs,
+  duplicate URLs, an invalid `lastmod`, or a 404/parameterised URL in the sitemap
+- placeholder or invented domains leaking into the build output
+- API keys or private key material in the emitted HTML
+- a `vercel.json` that is invalid JSON, contains comment keys, declares a
+  catch-all rewrite, or points `outputDirectory` somewhere other than `dist`
+
+On a local build the origin-dependent rules are downgraded to warnings, since
+there is no production domain yet. A real build stays strict.
 
 ---
 
@@ -179,9 +216,12 @@ Or import the repository at [vercel.com/new](https://vercel.com/new) — the
 framework preset is detected and `vercel.json` supplies the build command,
 output directory and headers.
 
-After the first deploy, set `VITE_SITE_URL` to the assigned domain (in
-**Project → Settings → Environment Variables**) and redeploy so canonical URLs,
-`sitemap.xml` and `robots.txt` point at the real origin.
+**No environment variables are required.** Vercel injects
+`VERCEL_PROJECT_PRODUCTION_URL` on production builds, so canonical URLs,
+`robots.txt` and `sitemap.xml` are correct on the first deploy. The build fails
+loudly rather than shipping a wrong domain, so if you ever see a
+`VERCEL_PROJECT_PRODUCTION_URL` error, set `VITE_SITE_URL` in
+**Project → Settings → Environment Variables** and redeploy.
 
 ### GitHub Pages
 

@@ -6,16 +6,23 @@ import { faqs, profile, services } from "../data/site";
  * The build-time prerenderer reads this to generate <head> tags, JSON-LD,
  * robots.txt and sitemap.xml, so nothing can drift between environments.
  *
- * Set VITE_SITE_URL to the real production origin (no trailing slash).
+ * The origin is resolved once in vite.config.js and injected as a build-time
+ * constant, so the prerendered HTML and the running app always agree. See
+ * scripts/resolve-site-url.mjs for the resolution order. Nothing is hardcoded
+ * here, which is what stops a stale or invented domain reaching production.
+ *
  * Set VITE_GOOGLE_SITE_VERIFICATION / VITE_BING_SITE_VERIFICATION to the
  * tokens from Search Console / Webmaster Tools — never hardcoded here.
  */
-const configuredUrl = import.meta.env.VITE_SITE_URL;
 
-/** Absolute origin with any trailing slash and protocol normalised away. */
-export const SITE_URL = (
-  configuredUrl || "https://mashyq.github.io-portifolio"
-).replace(/\/+$/, "");
+/** Absolute origin, trailing slash removed. */
+export const SITE_URL = __SITE_URL__;
+
+/** Where the origin came from: VITE_SITE_URL, VERCEL_*, or local-sentinel. */
+export const SITE_URL_SOURCE = __SITE_URL_SOURCE__;
+
+/** False only for local builds, where a localhost sentinel is used. */
+export const SITE_URL_IS_PRODUCTION = __SITE_URL_IS_PRODUCTION__;
 
 export const SITE = {
   name: profile.brand,
@@ -45,8 +52,19 @@ export const SITE = {
   },
 };
 
-export const absolute = (path) =>
-  `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+/**
+ * Resolves a root-relative path to an absolute URL.
+ *
+ * "/" maps to the bare origin with no trailing slash so that the homepage in
+ * the sitemap is byte-identical to the canonical tag. Google treats
+ * "https://site" and "https://site/" as the same URL, but keeping them
+ * identical avoids any self-inflicted duplicate-URL signal.
+ */
+export const absolute = (path) => {
+  const clean = path.startsWith("/") ? path : `/${path}`;
+  if (clean === "/") return SITE_URL;
+  return `${SITE_URL}${clean}`;
+};
 
 /**
  * Social preview image. SVG by default; point VITE_OG_IMAGE at a 1200x630 PNG
@@ -264,36 +282,63 @@ export function renderHead({
   return tags.filter(Boolean).join("\n    ");
 }
 
+/**
+ * The public, indexable page inventory.
+ *
+ * This is the single list the sitemap, the audit and the canonical check all
+ * read, so a page can never end up indexable-but-unlisted (or listed-but-noindex).
+ * `dist/404.html` is intentionally absent: it is a noindex utility page.
+ */
+export const PAGES = [
+  {
+    path: "/",
+    changefreq: "monthly",
+    priority: "1.0",
+    noindex: false,
+  },
+];
+
+/** Absolute indexable URLs, in sitemap order. */
+export const INDEXABLE_URLS = PAGES.filter((page) => !page.noindex).map((page) =>
+  absolute(page.path),
+);
+
 /** robots.txt content for the configured origin. Kept plain ASCII. */
 export function renderRobots() {
   return [
     "# FrankTech - robots.txt",
+    "# Everything is public and crawlable. Hash anchors do not need to be",
+    "# listed separately; the whole site is a single indexable document.",
     "",
     "User-agent: *",
     "Allow: /",
     "",
-    "# Assets must stay crawlable for rendering and link previews.",
-    "Allow: /assets/",
-    "",
-    "Sitemap: " + absolute("/sitemap.xml"),
+    `Sitemap: ${absolute("/sitemap.xml")}`,
     "",
   ].join("\n");
 }
 
 /** XML sitemap for the configured origin. */
 export function renderSitemap({ lastmod }) {
-  const url = [
-    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+  const body = PAGES.filter((page) => !page.noindex)
+    .map(
+      (page) =>
+        [
+          "  <url>",
+          `    <loc>${escapeHtml(absolute(page.path))}</loc>`,
+          `    <lastmod>${lastmod}</lastmod>`,
+          `    <changefreq>${page.changefreq}</changefreq>`,
+          `    <priority>${page.priority}</priority>`,
+          "  </url>",
+        ].join("\n"),
+    )
+    .join("\n");
+
+  return [
+    '<?xml version="1.0" encoding="UTF-8"?>',
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-    "  <url>",
-    `    <loc>${escapeHtml(SITE_URL)}</loc>`,
-    `    <lastmod>${lastmod}</lastmod>`,
-    "    <changefreq>monthly</changefreq>",
-    "    <priority>1.0</priority>",
-    "  </url>",
+    body,
     "</urlset>",
     "",
   ].join("\n");
-
-  return url;
 }

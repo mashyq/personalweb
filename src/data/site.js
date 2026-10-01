@@ -388,8 +388,10 @@ export const faqs = [
 
 export const footerLinks = [
   { id: "about", label: "About" },
+  { id: "process", label: "How I Work" },
   { id: "services", label: "Services" },
   { id: "work", label: "Work" },
+  { id: "testimonials", label: "Testimonials" },
   { id: "pricing", label: "Pricing" },
   { id: "faq", label: "FAQ" },
   { id: "contact", label: "Contact" },
