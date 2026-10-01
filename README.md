@@ -1,4 +1,4 @@
-﻿# FrankTech — ICT Solutions Portfolio
+# FrankTech — ICT Solutions Portfolio
 
 Personal portfolio and service site for **Francis Macharia (FrankTech)** — an
 independent ICT professional providing technical support, networking, CCTV
@@ -87,7 +87,7 @@ Safety rules — the build **fails loudly** rather than shipping a wrong domain:
 - Placeholder hosts (`your-domain.com`, `example.com`, …) are rejected
 - `http://` is rejected for any non-local host
 
-Production origin: `https://frankmachariatech.vercel.app`
+Production origin: `https://francismachariatech.vercel.app`
 
 | Variable                            | Required | Purpose                                            |
 | ----------------------------------- | -------- | -------------------------------------------------- |
@@ -126,6 +126,35 @@ What the build generates:
 | `dist/404.html`      | Branded error page, `noindex`                                          |
 | `dist/robots.txt`    | Allows all content, points at the sitemap                             |
 | `dist/sitemap.xml`   | Absolute HTTPS URLs, `lastmod` from build date                        |
+
+### Where `robots.txt` and `sitemap.xml` actually live
+
+**They are not files in `src/`.** `src/` only contains JavaScript, JSX and CSS —
+it is never served. This is a Vite SPA whose deployable artifact is the `dist/`
+directory, so the only place a file becomes publicly reachable is
+`dist/<name>`, and on Vercel that maps directly to `/<name>`.
+
+Both files are **generated at build time** by `prerender/entry.jsx` from the
+page inventory in `src/lib/seo.js` (`PAGES`). That is deliberate: it is what
+guarantees the sitemap, the canonical tag, the Open Graph URL and the JSON-LD
+all use the same origin, with no possibility of them drifting apart or of a
+stale hand-written copy shipping. Editing the files by hand would be undone by
+the next build.
+
+To change what is listed, edit `PAGES` in `src/lib/seo.js`. To change the
+address they point at, set `VITE_SITE_URL` (or let Vercel auto-detect it).
+
+### Search Console verification
+
+Two methods are supported at once:
+
+- **HTML tag** — the `google-site-verification` meta tag, emitted by
+  `src/lib/seo.js` on every page
+- **HTML file** — `public/google775cebcc593d555b.html`, which Vite copies
+  verbatim to `dist/`, making it reachable at `/google775cebcc593d555b.html`
+
+The audit fails the build if a `public/google*.html` file exists but is missing
+from the output, since that method breaks silently.
 
 Head tags emitted: `<title>`, description, keywords, `robots`, `author`,
 canonical, full Open Graph (including `og:locale`, `og:image:width/height`),

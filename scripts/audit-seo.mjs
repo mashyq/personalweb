@@ -7,7 +7,7 @@
  *
  * Run with: npm run audit:seo   (runs automatically after `npm run build`)
  */
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 const DIST = join(process.cwd(), "dist");
@@ -121,6 +121,30 @@ if (!googleVerification)
 else if (!/^[A-Za-z0-9_-]{10,}$/.test(googleVerification))
   fail(`google-site-verification token looks malformed: "${googleVerification}"`);
 else pass(`google-site-verification tag present (${googleVerification.length} chars)`);
+
+// ------------------------- Search Console HTML-file verification (public/*.html)
+// Google serves a file at the site root whose body is
+// "google-site-verification: <filename>.html". It must be copied verbatim from
+// public/ into the build output, or the verification method silently fails.
+const publicDir = join(process.cwd(), "public");
+const htmlVerificationFiles = existsSync(publicDir)
+  ? readdirSync(publicDir).filter((file) => /^google.*\.html$/.test(file))
+  : [];
+if (htmlVerificationFiles.length) {
+  for (const file of htmlVerificationFiles) {
+    if (!existsSync(join(DIST, file))) {
+      fail(
+        `Search Console verification file public/${file} is missing from the build output ` +
+          "— HTML-file verification will fail",
+      );
+    } else {
+      const built = readFileSync(join(DIST, file), "utf8");
+      if (!built.includes(file))
+        warn(`dist/${file} does not reference its own filename, which Google expects`);
+      else pass(`Search Console HTML-file verification served at /${file}`);
+    }
+  }
+}
 
 // --------------------------------------------------- https / origin consistency
 const insecureAbsolutes = [
@@ -316,6 +340,16 @@ if (existsSync(vercelConfigPath)) {
     if (config.outputDirectory !== "dist")
       warn(`vercel.json outputDirectory is "${config.outputDirectory}" (expected "dist")`);
     if (!config.buildCommand) fail("vercel.json has no buildCommand");
+
+    // cleanUrls 308-redirects /file.html -> /file, which breaks the exact
+    // filename Google's HTML-file verification expects. The site uses hash
+    // anchors and has no extensionless routes, so cleanUrls buys nothing.
+    if (config.cleanUrls && htmlVerificationFiles.length)
+      fail(
+        "vercel.json enables cleanUrls, which 308-redirects the Search Console " +
+          `verification file public/${htmlVerificationFiles[0]} and breaks that method`,
+      );
+    else pass("cleanUrls does not interfere with verification files");
   }
 }
 
