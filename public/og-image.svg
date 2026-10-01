@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="FrankTech — ICT support, networking and security solutions">
+  <rect width="1200" height="630" fill="#0d0b14" />
+
+  <!-- Brand mark -->
+  <rect x="80" y="88" width="72" height="72" rx="18" fill="#8b2ff5" />
+  <text x="116" y="137" font-family="Georgia, serif" font-size="34" font-weight="700"
+        text-anchor="middle" fill="#ffffff">FT</text>
+  <text x="170" y="136" font-family="Georgia, serif" font-size="34" font-weight="700" fill="#ffffff">
+    FrankTech
+  </text>
+
+  <!-- Headline -->
+  <text x="80" y="300" font-family="Georgia, serif" font-size="72" font-weight="700" fill="#ffffff">
+    Friendly, reliable
+  </text>
+  <text x="80" y="384" font-family="Georgia, serif" font-size="72" font-weight="700" fill="#ffffff">
+    tech solutions
+  </text>
+  <text x="80" y="468" font-family="Georgia, serif" font-size="72" font-weight="700" fill="#c084fc">
+    for modern teams.
+  </text>
+
+  <!-- Supporting line -->
+  <text x="80" y="536" font-family="Helvetica, Arial, sans-serif" font-size="26" fill="#b9a9d6">
+    ICT support · Networking · CCTV · PC repair · IT consultation
+  </text>
+
+  <rect x="80" y="572" width="150" height="4" rx="2" fill="#8b2ff5" />
+</svg>

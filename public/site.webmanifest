@@ -1,0 +1,17 @@
+{
+  "name": "FrankTech — ICT Solutions",
+  "short_name": "FrankTech",
+  "description": "Professional ICT support, networking, CCTV installation and PC repair.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0912",
+  "theme_color": "#8b2ff5",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

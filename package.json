@@ -1,0 +1,30 @@
+{
+  "name": "franktech-portfolio",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "description": "FrankTech — ICT solutions portfolio. React + Vite + Tailwind CSS.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && vite build --ssr prerender/entry.jsx --outDir .prerender --emptyOutDir && node .prerender/entry.js && node scripts/audit-seo.mjs",
+    "preview": "vite preview",
+    "audit:seo": "node scripts/audit-seo.mjs",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@tailwindcss/vite": "^4.1.16",
+    "@vitejs/plugin-react": "^5.1.0",
+    "eslint": "^9.39.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "tailwindcss": "^4.1.16",
+    "vite": "^7.2.0"
+  }
+}
